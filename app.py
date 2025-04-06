@@ -286,6 +286,7 @@ def screening_agent(user_input):
     screening_prompt = [
         {"role": "system", "content": """You are a mental health screening specialist. 
         Your task is to have a conversation with the patient to identify potential mental health issues.
+        Ask about the patient's name, age, gender.
         Ask about their feelings, experiences and symptoms.
         Based on their responses, identify potential mental health conditions they might have (normal, depression, anxiety, ptsd, hopelessness, stress), for the conditions out of the list,e.g schizophrenia,  hallucinations, etc, please say "the chatbot can only detect the conditions of depression, anxiety, ptsd, hopelessness and stress,
          for the other conditions, please seek a professional help"
@@ -722,7 +723,7 @@ def generate_report():
         return fallback_report
 
 # Streamlit UI
-st.title("Mental Health Chatbot")
+st.title("Mental Health Initial Diagnosis Chatbot")
 
 # Add an auto-scroll container for the chat
 chat_container = st.container()
@@ -733,11 +734,13 @@ if not st.session_state.messages:
         "role": "assistant", 
         "content": """Welcome to the Mental Health Chatbot.
 
-I'm here to help assess your mental health and provide guidance. We'll start with a conversation to understand your concerns, then I may ask you to complete one or more standardized assessments, and finally I'll provide a report summarizing our findings.
+***I'm here to help assess your mental health and provide initial diagnosis. We'll start with a conversation to understand your concerns, then I may ask you to complete one or more standardized assessments, and finally I'll provide a report summarizing our findings.***
 
-Please note that this is not a substitute for professional medical advice, diagnosis, or treatment. If you're experiencing a mental health emergency, please contact emergency services or a crisis helpline immediately.
+***Please note that this is not a substitute for professional medical advice, diagnosis, or treatment. If you're experiencing a mental health emergency, please contact emergency services or a crisis helpline immediately.***
 
-How are you feeling today? What brings you here?"""
+***The conversation is confidential and will not be shared with anyone without your consent.***
+
+Hi, what is your name?"""
     }
     st.session_state.messages.append(welcome_message)
 
