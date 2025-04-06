@@ -3,7 +3,12 @@ import json
 from datetime import datetime
 import time
 import urllib.request
+from dotenv import load_dotenv
 
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY")
+API_KEY = str(API_KEY)
 # Function to communicate with the GPT API
 def chat_with_gpt(messages):
     try:
@@ -13,7 +18,7 @@ def chat_with_gpt(messages):
             # Request headers
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache',
-            'Ocp-Apim-Subscription-Key': '16512fbc26034f7b87bd123cffce8348',
+            'Ocp-Apim-Subscription-Key': API_KEY,
         }
 
         # Request body
