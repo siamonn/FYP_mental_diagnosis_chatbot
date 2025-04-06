@@ -757,27 +757,28 @@ with chat_container:
         '''
         st.components.v1.html(js, height=0)
 
-# Input for user
-if st.session_state.chat_state != "assessment" or st.session_state.assessment_index >= len(ASSESSMENTS[st.session_state.current_assessment]["questions"]):
-    user_input = st.chat_input("Type your message here...")
-    if user_input:
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        
-        # Get response based on current state
-        if st.session_state.chat_state == "screening":
-            response = screening_agent(user_input)
-            # The screening agent handles adding the response to the chat history
-        elif st.session_state.chat_state == "assessment":
-            # Just pass control to the assessment agent
-            response = assessment_agent()
-        else:  # report
-            response = "Your diagnosis report has been generated. Is there anything specific you'd like to know?"
-            if st.session_state.messages[-1]["role"] != "assistant":
-                st.session_state.messages.append({"role": "assistant", "content": response})
-        
-        # Force rerun to display new messages in the chat
-        st.rerun()
+# Input for user - always show the input box
+user_input = st.chat_input("Type your message here...")
+if user_input:
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    # Get response based on current state
+    if st.session_state.chat_state == "screening":
+        response = screening_agent(user_input)
+        # The screening agent handles adding the response to the chat history
+    elif st.session_state.chat_state == "assessment":
+        # Process the text input even during assessment
+        # Let the user know they can continue with the assessment using the buttons
+        response = "I see you've sent a message during the assessment. Please use the buttons above to answer the current assessment question. If you need to stop the assessment, you can click 'Start New Conversation'."
+        st.session_state.messages.append({"role": "assistant", "content": response})
+    else:  # report
+        response = "Your diagnosis report has been generated. Is there anything specific you'd like to know?"
+        if st.session_state.messages[-1]["role"] != "assistant":
+            st.session_state.messages.append({"role": "assistant", "content": response})
+    
+    # Force rerun to display new messages in the chat
+    st.rerun()
 
 # If in assessment state, display the assessment interface
 if st.session_state.chat_state == "assessment" and st.session_state.current_assessment:
