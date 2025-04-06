@@ -3,19 +3,12 @@ import json
 from datetime import datetime
 import time
 import urllib.request
-import os
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
+import os
 load_dotenv()
 
-# Get API key from environment variable
 API_KEY = os.getenv("API_KEY")
-if not API_KEY:
-    st.error("API_KEY not found in environment variables. Please make sure you have a .env file with API_KEY defined.")
-    API_KEY = ""  # Fallback to empty string to avoid None errors
-API_KEY = str(API_KEY)  # Ensure it's a string
-
+API_KEY = str(API_KEY)
 # Function to communicate with the GPT API
 def chat_with_gpt(messages):
     try:
