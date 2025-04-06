@@ -6,7 +6,7 @@ import urllib.request
 from dotenv import load_dotenv
 import os
 load_dotenv()
-API_KEY = os.getenv("API_KEY")
+API_KEY = str(os.getenv("API_KEY"))
 
 # Function to communicate with the GPT API
 def chat_with_gpt(messages):
