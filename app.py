@@ -1,15 +1,81 @@
 import streamlit as st
-import openai
 import json
 from datetime import datetime
-from openai import OpenAI
 import time
+import urllib.request
 
-# OpenAI API configuration
-client = OpenAI(
-    base_url='https://xiaoai.plus/v1',
-    api_key='sk-UnNXXoNG6qqa1RUl24zKrakQaHBeyxqkxEtaVwGbSrGlRQxl'
-)
+# Function to communicate with the GPT API
+def chat_with_gpt(messages):
+    try:
+        url = "https://cuhk-api-dev1-apim1.azure-api.net/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-05-15"
+
+        hdr = {
+            # Request headers
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Ocp-Apim-Subscription-Key': '16512fbc26034f7b87bd123cffce8348',
+        }
+
+        # Request body
+        data = {
+            "messages": messages,
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
+        
+        data = json.dumps(data)
+        req = urllib.request.Request(url, headers=hdr, data=bytes(data.encode("utf-8")))
+
+        req.get_method = lambda: 'POST'
+        response = urllib.request.urlopen(req)
+        response_data = json.loads(response.read().decode('utf-8'))
+        
+        return response_data['choices'][0]['message']['content']
+    except Exception as e:
+        st.error(f"API Error: {str(e)}")
+        return f"Sorry, I encountered an error while processing your request. Please try again. Error: {str(e)}"
+
+# Function to communicate with the GPT API for report generation
+def generate_report_with_gpt(messages):
+    max_retries = 2
+    retry_count = 0
+    last_error = None
+    
+    while retry_count <= max_retries:
+        try:
+            url = "https://cuhk-api-dev1-apim1.azure-api.net/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-05-15"
+
+            hdr = {
+                # Request headers
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': '16512fbc26034f7b87bd123cffce8348',
+            }
+
+            # Request body
+            data = {
+                "messages": messages,
+                "temperature": 0.5,  # Lower temperature for more consistent results
+                "max_tokens": 2000  # Increase max tokens for longer reports
+            }
+            
+            data = json.dumps(data)
+            req = urllib.request.Request(url, headers=hdr, data=bytes(data.encode("utf-8")))
+
+            req.get_method = lambda: 'POST'
+            response = urllib.request.urlopen(req, timeout=90)  # Extended timeout
+            response_data = json.loads(response.read().decode('utf-8'))
+            
+            return response_data['choices'][0]['message']['content']
+        except Exception as e:
+            last_error = e
+            retry_count += 1
+            st.warning(f"API error on attempt {retry_count}/{max_retries+1}: {str(e)}. Retrying...")
+            time.sleep(2)  # Wait before retrying
+    
+    # If we get here, all retries failed
+    st.error(f"Failed to generate report after {max_retries+1} attempts. Last error: {str(last_error)}")
+    raise last_error
 
 # Define assessment tools
 ASSESSMENTS = {
@@ -210,46 +276,38 @@ def get_healthcare_recommendation(assessment_name, score, interpretation):
     else:
         return "Based on your assessment results, it's always a good idea to discuss your mental health with a qualified healthcare provider during your regular check-ups."
 
-# Function to communicate with the GPT API
-def chat_with_gpt(messages):
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=1000
-    )
-    return response.choices[0].message.content
-
 # Function for the screening agent
 def screening_agent(user_input):
     screening_prompt = [
         {"role": "system", "content": """You are a mental health screening specialist. 
         Your task is to have a conversation with the patient to identify potential mental health issues.
-        Ask about their feelings, experiences, symptoms, and behaviors.
-        Based on their responses, identify potential mental health conditions they might have (depression, anxiety, PTSD, stress, hopelessness, etc.)
+        Ask about their feelings, experiences and symptoms.
+        Based on their responses, identify potential mental health conditions they might have (normal, depression, anxiety, ptsd, hopelessness, stress), for the conditions out of the list,e.g schizophrenia,  hallucinations, etc, please say "the chatbot can only detect the conditions of depression, anxiety, ptsd, hopelessness and stress,
+         for the other conditions, please seek a professional help"
+        think about the reason of the patient's systomps, if the reason is not related to the mental health,e.g schizophrenia, please say "the chatbot can only detect the conditions of depression, anxiety, ptsd, hopelessness and stress,
+         for the other conditions, please seek a professional help"
         or determine if they appear mentally healthy. Ask follow-up questions to gather more information that helps you determine if they have a mental health condition.
         Once you have enough information, you do not need to ask any more questions, just end the conversation with a JSON output in this format:
         {"screening_complete": true, "possible_conditions": ["condition1", "condition2"], "notes": "brief notes on observations"}
         If the patient appears mentally healthy with no significant issues, include "normal" in the possible_conditions list.
         IMPORTANT: When sending the JSON, DO NOT include any other text before or after the JSON - only send the JSON object itself.
-         
-         **URGENT SAFETY CONCERN DETECTED**
 
-If you are currently in a dangerous situation or planning to harm yourself:
+        Do not recommend any things to patients and focus on the screening, unless you detect a URGENT SAFETY CONCERN, please recommend the following:
+        1. **If you are in an immediately dangerous situation (such as on a rooftop, bridge, or with means of harm):**
+        - Move to a safe location immediately
+        - Call emergency services: 999
+        - Stay on the line with emergency services
 
-1. **If you are in an immediately dangerous situation (such as on a rooftop, bridge, or with means of harm):**
-   - Move to a safe location immediately
-   - Call emergency services: 999
-   - Stay on the line with emergency services
+        2. **For immediate support:**
+        - Go to your nearest emergency room/A&E department
+        - Call The Samaritans hotline (Multilingual): (852) 2896 0000
+        - Call Suicide Prevention Service hotline (Cantonese): (852) 2382 0000
 
-2. **For immediate support:**
-   - Go to your nearest emergency room/A&E department
-   - Call The Samaritans hotline (Multilingual): (852) 2896 0000
-   - Call Suicide Prevention Service hotline (Cantonese): (852) 2382 0000
-
-**Are you currently in a safe location?** If not, please seek immediate help using the emergency contacts above.
-
-Your safety is the absolute top priority right now. Would you like me to continue with our assessment, or would you prefer I provide more resources or support options?"""}
+        **Are you currently in a safe location?** If not, please seek immediate help using the emergency contacts above.
+        and ask if the patient would like to continue with our assessment, or would they prefer I provide more resources or support options?
+        
+         """}
+        
     ]
     
     # Add chat history
@@ -284,25 +342,32 @@ Your safety is the absolute top priority right now. Would you like me to continu
                 if "normal" not in result.get("possible_conditions", []) and result.get("possible_conditions"):
                     # Determine assessment needed based on possible conditions
                     conditions = result.get("possible_conditions", [])
+                    conditions = [c.lower() for c in conditions]  # Convert all to lowercase for easier comparison
                     
-                    # Check for depression first as it's common
-                    if "depression" in conditions or "Depression" in conditions:
-                        st.session_state.current_assessment = "PHQ-9"
-                    # Check for anxiety
-                    elif "anxiety" in conditions or "Anxiety" in conditions:
-                        st.session_state.current_assessment = "GAD-7"
-                    # Check for PTSD
-                    elif "ptsd" in conditions or "PTSD" in conditions:
-                        st.session_state.current_assessment = "PCL-5"
-                    # Check for hopelessness
-                    elif "hopelessness" in conditions or "Hopelessness" in conditions:
-                        st.session_state.current_assessment = "BHS"
-                    # Check for stress
-                    elif "stress" in conditions or "Stress" in conditions:
-                        st.session_state.current_assessment = "PSS"
-                    # Default to PHQ-9 if no specific condition matches
-                    else:
-                        st.session_state.current_assessment = "PHQ-9"
+                    # Create a list to store the order of assessments
+                    assessment_order = []
+                    
+                    # Check for conditions in priority order
+                    if "depression" in conditions:
+                        assessment_order.append("PHQ-9")
+                    if "anxiety" in conditions:
+                        assessment_order.append("GAD-7")
+                    if "ptsd" in conditions:
+                        assessment_order.append("PCL-5")
+                    if "hopelessness" in conditions:
+                        assessment_order.append("BHS")
+                    if "stress" in conditions:
+                        assessment_order.append("PSS")
+                    
+                    # If no specific assessments matched but conditions exist, provide general advice
+                    if not assessment_order:
+                        return "Based on your responses, it's important to speak with a healthcare provider for a proper evaluation and discussion of treatment options."
+                    
+                    # Start with the first assessment
+                    st.session_state.current_assessment = assessment_order[0]
+                    
+                    # Save all identified conditions to ensure subsequent assessments are conducted
+                    st.session_state.diagnosis["possible_conditions"] = conditions
                     
                     # Notify user of transition to assessment
                     assessment_intro = f"Based on our conversation, I'd like to conduct a {ASSESSMENTS[st.session_state.current_assessment]['name']} assessment to better understand your symptoms. Let's begin with the first question."
@@ -331,30 +396,29 @@ def assessment_agent():
     current = st.session_state.current_assessment
     assessment_data = ASSESSMENTS[current]
     
+    # Ensure assessment index is reset when switching to a new assessment
+    if "last_assessment" not in st.session_state:
+        st.session_state.last_assessment = current
+    elif st.session_state.last_assessment != current:
+        st.session_state.assessment_index = 0  # Reset index for new assessment
+        st.session_state.last_assessment = current
+    
     if st.session_state.assessment_index < len(assessment_data["questions"]):
         # Display current question
         question = assessment_data["questions"][st.session_state.assessment_index]
         
-        # Always show the current question above the options
+        # Only display the question in the UI, don't add to message history yet
         st.markdown(f"**Question {st.session_state.assessment_index + 1}:** {question}")
         
         # Create columns for options
         cols = st.columns(len(assessment_data["options"]))
         
-        # Add question to messages - only if it's not already there
-        add_question = True
-        if len(st.session_state.messages) > 0:
-            last_message = st.session_state.messages[-1]
-            # Check if the last message already contains this question
-            if last_message["role"] == "assistant" and f"Question {st.session_state.assessment_index + 1}:" in last_message["content"]:
-                add_question = False
-        
-        if add_question:
-            st.session_state.messages.append({"role": "assistant", "content": f"Question {st.session_state.assessment_index + 1}: {question}"})
-        
         # Display options as buttons
         for i, col in enumerate(cols):
             if col.button(assessment_data["options"][i], key=f"option_{i}_{st.session_state.assessment_index}_{current}"):
+                # First, add the current question to message history
+                st.session_state.messages.append({"role": "assistant", "content": f"Question {st.session_state.assessment_index + 1}: {question}"})
+                
                 # Save response
                 if current not in st.session_state.assessment_responses:
                     st.session_state.assessment_responses[current] = []
@@ -374,12 +438,11 @@ def assessment_agent():
                 # Record user's answer
                 st.session_state.messages.append({"role": "user", "content": f"My answer: {assessment_data['options'][i]}"})
                 
-                # Move to next question
+                # Move to next question immediately
                 st.session_state.assessment_index += 1
                 
-                # Force rerun to immediately update the UI with the next question
-                if st.session_state.assessment_index < len(assessment_data["questions"]):
-                    st.rerun()
+                # Force an immediate rerun for better responsiveness
+                st.rerun()
                 
                 # If all questions answered, calculate results
                 if st.session_state.assessment_index >= len(assessment_data["questions"]):
@@ -415,26 +478,42 @@ This assessment is a screening tool and not a clinical diagnosis. The chatbot ca
                     
                     # Check if more assessments needed based on possible conditions
                     possible_conditions = st.session_state.diagnosis["possible_conditions"]
-                    next_assessment = None
                     
-                    # Select next assessment if needed
-                    if "depression" in possible_conditions and current != "PHQ-9" and "PHQ-9" not in st.session_state.diagnosis["assessment_results"]:
-                        next_assessment = "PHQ-9"
-                    elif "anxiety" in possible_conditions and current != "GAD-7" and "GAD-7" not in st.session_state.diagnosis["assessment_results"]:
-                        next_assessment = "GAD-7"
-                    elif ("ptsd" in possible_conditions or "PTSD" in possible_conditions) and current != "PCL-5" and "PCL-5" not in st.session_state.diagnosis["assessment_results"]:
-                        next_assessment = "PCL-5"
-                    elif "hopelessness" in possible_conditions and current != "BHS" and "BHS" not in st.session_state.diagnosis["assessment_results"]:
-                        next_assessment = "BHS"
-                    elif "stress" in possible_conditions and current != "PSS" and "PSS" not in st.session_state.diagnosis["assessment_results"]:
-                        next_assessment = "PSS"
+                    # Create a priority list of assessments to conduct in sequence
+                    assessment_priorities = []
                     
-                    if next_assessment:
+                    # Populate the priority list based on conditions
+                    if "depression" in possible_conditions:
+                        if "PHQ-9" not in st.session_state.diagnosis["assessment_results"] and current != "PHQ-9":
+                            assessment_priorities.append("PHQ-9")
+                            
+                    if "anxiety" in possible_conditions:
+                        if "GAD-7" not in st.session_state.diagnosis["assessment_results"] and current != "GAD-7":
+                            assessment_priorities.append("GAD-7")
+                            
+                    if "ptsd" in possible_conditions:
+                        if "PCL-5" not in st.session_state.diagnosis["assessment_results"] and current != "PCL-5":
+                            assessment_priorities.append("PCL-5")
+                            
+                    if "hopelessness" in possible_conditions:
+                        if "BHS" not in st.session_state.diagnosis["assessment_results"] and current != "BHS":
+                            assessment_priorities.append("BHS")
+                            
+                    if "stress" in possible_conditions:
+                        if "PSS" not in st.session_state.diagnosis["assessment_results"] and current != "PSS":
+                            assessment_priorities.append("PSS")
+                    
+                    # Get the next assessment if any remain
+                    if assessment_priorities:
+                        next_assessment = assessment_priorities[0]
                         st.session_state.current_assessment = next_assessment
                         st.session_state.assessment_index = 0
                         next_assessment_intro = f"Let's also conduct a {ASSESSMENTS[next_assessment]['name']} assessment. Let's begin with the first question."
                         st.session_state.messages.append({"role": "assistant", "content": next_assessment_intro})
-                        st.rerun()  # Force a rerun to immediately show the next assessment
+                        
+                        # Force an immediate rerun for better responsiveness
+                        st.rerun()
+                        
                         return next_assessment_intro
                     else:
                         # Move to report generation if no more assessments needed
@@ -447,42 +526,103 @@ Based on your results, the report will include recommendations about whether you
 
 I'm generating your report now..."""
                         st.session_state.messages.append({"role": "assistant", "content": transition_message})
-                        st.rerun()  # Force a rerun to ensure the UI updates with the new state
+                        
+                        # Force an immediate rerun
+                        st.rerun()
+                        
                         return generate_report()
-                    
-                    return result_message
-                
-                return f"Question {st.session_state.assessment_index + 1}: {assessment_data['questions'][st.session_state.assessment_index]}"
         
         return None
     
-    return None
+    # If we get here, all questions in the current assessment are completed
+    if st.session_state.assessment_index >= len(assessment_data["questions"]):
+        # Calculate total score
+        total_score = sum(st.session_state.assessment_responses[current])
+        
+        # Determine interpretation
+        interpretation = ""
+        for score_range, interp in assessment_data["interpretation"].items():
+            min_score, max_score = map(int, score_range.split("-"))
+            if min_score <= total_score <= max_score:
+                interpretation = interp
+                break
+        
+        # Save results
+        st.session_state.diagnosis["assessment_results"][current] = {
+            "score": total_score,
+            "interpretation": interpretation
+        }
+        
+        # Report results to user with healthcare recommendation and disclaimer
+        result_message = f"""Assessment complete: {assessment_data['name']}
+Score: {total_score}
+Interpretation: {interpretation}
 
-# Function to communicate with the GPT API for report generation
-def generate_report_with_gpt(messages):
-    max_retries = 2
-    retry_count = 0
-    last_error = None
+**Healthcare Recommendation:**
+{get_healthcare_recommendation(assessment_data['name'], total_score, interpretation)}
+
+**Important Disclaimer:**
+This assessment is a screening tool and not a clinical diagnosis. The chatbot cannot provide a real medical diagnosis and is not a substitute for professional healthcare. Please consult with a qualified healthcare provider for proper evaluation and treatment."""
+        
+        st.session_state.messages.append({"role": "assistant", "content": result_message})
+        
+        # Check if more assessments needed based on possible conditions
+        possible_conditions = st.session_state.diagnosis["possible_conditions"]
+        
+        # Create a priority list of assessments to conduct in sequence
+        assessment_priorities = []
+        
+        # Populate the priority list based on conditions
+        if "depression" in possible_conditions:
+            if "PHQ-9" not in st.session_state.diagnosis["assessment_results"] and current != "PHQ-9":
+                assessment_priorities.append("PHQ-9")
+                
+        if "anxiety" in possible_conditions:
+            if "GAD-7" not in st.session_state.diagnosis["assessment_results"] and current != "GAD-7":
+                assessment_priorities.append("GAD-7")
+                
+        if "ptsd" in possible_conditions:
+            if "PCL-5" not in st.session_state.diagnosis["assessment_results"] and current != "PCL-5":
+                assessment_priorities.append("PCL-5")
+                
+        if "hopelessness" in possible_conditions:
+            if "BHS" not in st.session_state.diagnosis["assessment_results"] and current != "BHS":
+                assessment_priorities.append("BHS")
+                
+        if "stress" in possible_conditions:
+            if "PSS" not in st.session_state.diagnosis["assessment_results"] and current != "PSS":
+                assessment_priorities.append("PSS")
+        
+        # Get the next assessment if any remain
+        if assessment_priorities:
+            next_assessment = assessment_priorities[0]
+            st.session_state.current_assessment = next_assessment
+            st.session_state.assessment_index = 0
+            next_assessment_intro = f"Let's also conduct a {ASSESSMENTS[next_assessment]['name']} assessment. Let's begin with the first question."
+            st.session_state.messages.append({"role": "assistant", "content": next_assessment_intro})
+            
+            # Force an immediate rerun for better responsiveness
+            st.rerun()
+            
+            return next_assessment_intro
+        else:
+            # Move to report generation if no more assessments needed
+            st.session_state.chat_state = "report"
+            transition_message = """Thank you for completing the assessments. I'll now generate a comprehensive report based on our conversation and your assessment results.
+
+While I can provide a summary of your assessment results, please remember that these assessments are screening tools only and not a substitute for professional medical diagnosis. 
+
+Based on your results, the report will include recommendations about whether you should consult with a healthcare provider or can continue with self-care strategies at home.
+
+I'm generating your report now..."""
+            st.session_state.messages.append({"role": "assistant", "content": transition_message})
+            
+            # Force an immediate rerun
+            st.rerun()
+            
+            return generate_report()
     
-    while retry_count <= max_retries:
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.5,  # Lower temperature for more consistent results
-                max_tokens=2000,  # Increase max tokens for longer reports
-                timeout=90  # Extended timeout for longer processing time
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            last_error = e
-            retry_count += 1
-            st.warning(f"API error on attempt {retry_count}/{max_retries+1}: {str(e)}. Retrying...")
-            time.sleep(2)  # Wait before retrying
-    
-    # If we get here, all retries failed
-    st.error(f"Failed to generate report after {max_retries+1} attempts. Last error: {str(last_error)}")
-    raise last_error
+    return None
 
 # Function to generate a diagnosis report
 def generate_report():
@@ -579,6 +719,9 @@ def generate_report():
 # Streamlit UI
 st.title("Mental Health Chatbot")
 
+# Add an auto-scroll container for the chat
+chat_container = st.container()
+
 # Show welcome message if no messages exist
 if not st.session_state.messages:
     welcome_message = {
@@ -593,10 +736,26 @@ How are you feeling today? What brings you here?"""
     }
     st.session_state.messages.append(welcome_message)
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Display chat messages in the scrollable container
+with chat_container:
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Auto-scroll to the bottom (using JavaScript)
+    if st.session_state.messages:
+        js = '''
+        <script>
+            function scrollToBottom() {
+                const messages = document.querySelector('[data-testid="stChatMessageContainer"]');
+                if (messages) {
+                    messages.scrollTop = messages.scrollHeight;
+                }
+            }
+            scrollToBottom();
+        </script>
+        '''
+        st.components.v1.html(js, height=0)
 
 # Input for user
 if st.session_state.chat_state != "assessment" or st.session_state.assessment_index >= len(ASSESSMENTS[st.session_state.current_assessment]["questions"]):
@@ -604,24 +763,21 @@ if st.session_state.chat_state != "assessment" or st.session_state.assessment_in
     if user_input:
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
-            
+        
         # Get response based on current state
-        with st.chat_message("assistant"):
-            if st.session_state.chat_state == "screening":
-                response = screening_agent(user_input)
-                # The screening agent now handles adding the response to the chat history
-                st.markdown(response)
-            elif st.session_state.chat_state == "assessment":
-                # Just pass control to the assessment agent
-                response = assessment_agent()
-                # Don't display anything here since assessment_agent displays its own messages
-            else:  # report
-                response = "Your diagnosis report has been generated. Is there anything specific you'd like to know?"
-                st.markdown(response)
-                if st.session_state.messages[-1]["role"] != "assistant":
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+        if st.session_state.chat_state == "screening":
+            response = screening_agent(user_input)
+            # The screening agent handles adding the response to the chat history
+        elif st.session_state.chat_state == "assessment":
+            # Just pass control to the assessment agent
+            response = assessment_agent()
+        else:  # report
+            response = "Your diagnosis report has been generated. Is there anything specific you'd like to know?"
+            if st.session_state.messages[-1]["role"] != "assistant":
+                st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        # Force rerun to display new messages in the chat
+        st.rerun()
 
 # If in assessment state, display the assessment interface
 if st.session_state.chat_state == "assessment" and st.session_state.current_assessment:
