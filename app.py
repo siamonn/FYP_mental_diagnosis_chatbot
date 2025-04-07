@@ -450,10 +450,9 @@ Based on your results, the report will include recommendations about whether you
 
 I'm generating your report now..."""
                         st.session_state.messages.append({"role": "assistant", "content": transition_message})
-                        st.rerun()
                         #generate report
                         report = generate_report()
-                        st.rerun()
+                        
                 else:
                     st.rerun()
         
