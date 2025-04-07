@@ -288,8 +288,6 @@ def screening_agent(user_input):
         Ask about their feelings, experiences and symptoms.
         Based on their responses, identify potential mental health conditions they might have (normal, depression, anxiety, ptsd, hopelessness, stress), for the conditions out of the list,e.g schizophrenia,  hallucinations, etc, please say "the chatbot can only detect the conditions of depression, anxiety, ptsd, hopelessness and stress,
          for the other conditions, please seek a professional help"
-        think about the reason of the patient's systomps, if the reason is not related to the mental health,e.g schizophrenia, please say "the chatbot can only detect the conditions of depression, anxiety, ptsd, hopelessness and stress,
-         for the other conditions, please seek a professional help"
         or determine if they appear mentally healthy. Ask follow-up questions to gather more information that helps you determine if they have a mental health condition.
         Once you have enough information, you do not need to ask any more questions, just end the conversation with a JSON output in this format:
         {"screening_complete": true, "possible_conditions": ["condition1", "condition2"], "notes": "brief notes on observations"}
