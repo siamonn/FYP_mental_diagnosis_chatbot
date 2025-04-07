@@ -440,17 +440,18 @@ This assessment is a screening tool and not a clinical diagnosis. The chatbot ca
                         st.session_state.messages.append({"role": "assistant", "content": next_assessment_intro})
                         st.rerun()
                     else:
-                        # No more assessments needed, move to report generation
-                        st.session_state.chat_state = "report"
-                        transition_message = """Thank you for completing the assessments. I'll now generate a comprehensive report based on our conversation and your assessment results.
+                        # No more assessments needed, show generate report button
+                        st.session_state.chat_state = "awaiting_report"
+                        completion_message = """Thank you for completing all the assessments. 
 
-While I can provide a summary of your assessment results, please remember that these assessments are screening tools only and not a substitute for professional medical diagnosis. 
+You can now generate your comprehensive report by clicking the "Generate Report" button below. The report will include:
+1. A summary of your assessment results
+2. Interpretation of your scores
+3. Recommendations for next steps
+4. Important information about seeking professional help
 
-Based on your results, the report will include recommendations about whether you should consult with a healthcare provider or can continue with self-care strategies at home.
-
-I'm generating your report now..."""
-                        st.session_state.messages.append({"role": "assistant", "content": transition_message})
-                        report = generate_report()
+When you're ready, click the button to generate your report."""
+                        st.session_state.messages.append({"role": "assistant", "content": completion_message})
                         st.rerun()
                 else:
                     st.rerun()
@@ -666,6 +667,12 @@ if user_input:
 if st.session_state.chat_state == "assessment" and st.session_state.current_assessment:
     assessment_agent()
 
+# Generate Report button
+if st.session_state.chat_state == "awaiting_report":
+    if st.button("Generate Report"):
+        st.session_state.messages.append({"role": "assistant", "content": "Generating your comprehensive report..."})
+        report = generate_report()
+        st.rerun()
 
 # Reset button
 if st.button("Start New Conversation"):
