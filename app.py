@@ -450,9 +450,8 @@ Based on your results, the report will include recommendations about whether you
 
 I'm generating your report now..."""
                         st.session_state.messages.append({"role": "assistant", "content": transition_message})
-                        #generate report
                         report = generate_report()
-                        
+                        st.rerun()
                 else:
                     st.rerun()
         
@@ -556,11 +555,25 @@ def generate_report():
         assessment_results += f"Possible conditions identified during screening: {conditions}\n\n"
         
         report_prompt.append({"role": "user", "content": f"Generate a comprehensive diagnosis report based on our conversation and the following assessment results:\n{assessment_results}\nInclude today's date ({datetime.now().strftime('%B %d, %Y')}) in the report header."})
-        
+        st.session_state.messages.append({"role": "assistant", "content": "report generating..."})
         report = generate_report_with_gpt(report_prompt)
         st.session_state.messages.append({"role": "assistant", "content": report})
         st.session_state.report_generated = True
         st.session_state.chat_state = "follow_up"
+        
+        # Add a message inviting follow-up questions
+        follow_up_invitation = """I've generated your report based on our conversation and assessment results. 
+
+You can now:
+1. Ask questions about your assessment results
+2. Get more information about mental health conditions
+3. Discuss your concerns about the recommendations
+4. Learn more about self-care strategies
+
+What would you like to know more about?"""
+        
+        st.session_state.messages.append({"role": "assistant", "content": follow_up_invitation})
+        st.rerun()
         return report
     except Exception as e:
         error_message = f"Error generating report: {str(e)}"
