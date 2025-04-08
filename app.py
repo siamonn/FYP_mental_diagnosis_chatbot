@@ -11,8 +11,8 @@ API = str(API)
 # Initialize OpenAI client
 client = OpenAI(
 
-    base_url='https://xiaoai.plus/v1'
-    api_key=API,
+    base_url ="https://xiaoai.plus/v1",
+    api_key=API
     
 )
 
