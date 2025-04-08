@@ -15,11 +15,7 @@ dotenv.load_dotenv(override=True)
 
 # Get the API key
 API = st.secrets["API_KEY"]
-st.error(API)
 
-# Verify API key is loaded correctly
-if not API_KEY:
-    st.error("API_KEY not found in environment variables")
 # Initialize OpenAI client
 client = OpenAI(
     api_key=API,
