@@ -2,16 +2,8 @@ import streamlit as st
 import json
 from datetime import datetime
 import time
-import os
-import dotenv
 import re
 from openai import OpenAI
-
-# Clear any existing environment variables
-os.environ.clear()
-
-# Force reload the .env file
-dotenv.load_dotenv(override=True)
 
 # Get the API key
 API = st.secrets["API_KEY"]
@@ -57,7 +49,7 @@ def initialize_session_state():
 def chat_with_gpt(messages, temperature=0.7, max_tokens=1000, timeout=None):
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=message,
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens
         )
