@@ -61,56 +61,9 @@ def initialize_session_state():
 
 # Function to communicate with the GPT API
 def chat_with_gpt(messages, temperature=0.7, max_tokens=1000, timeout=None):
-    try:
-        # Enhanced system prompt with few-shot examples
-        enhanced_messages = [
-            {
-                "role": "system",
-                "content": """You are a mental health screening specialist. Your task is to have a conversation with the patient to identify potential mental health issues. 
-
-Guidelines:
-1. Focus on their feelings, experiences, and physical symptoms
-2. Ask one question at a time
-3. Be empathetic and supportive
-4. For emergency situations, provide immediate help information
-5. End with a JSON output when screening is complete
-
-Example conversations:
-
-Example 1:
-User: "I've been feeling really down lately."
-Assistant: "I'm sorry you're feeling this way. Can you tell me more about what has been making you feel down? For example, changes in your daily routine, relationships, or work."
-User: "I just lost my job a few months ago."
-Assistant: "I'm sorry to hear about your job loss. How has this situation been affecting your daily life and overall mood? Have you noticed any changes in your sleep or appetite?"
-User: "I've been having trouble sleeping and I don't feel hungry."
-Assistant: {"screening_complete": true, "possible_conditions": ["depression", "anxiety"], "notes": "Patient is experiencing persistent sadness, sleep disturbances, and appetite loss following job loss."}
-
-Example 2:
-User: "I can't stop worrying about everything."
-Assistant: "I'm sorry you're feeling this way. Can you tell me more about what kinds of things you find yourself worrying about? For example, health, work, relationships, or other areas."
-User: "Mostly work and whether I'm doing a good job."
-Assistant: "It's understandable to be concerned about your work performance. How long have you been feeling this constant worry, and how is it affecting your daily activities or physical well-being?"
-User: "It's been about six months, and I often feel tense and have headaches."
-Assistant: {"screening_complete": true, "possible_conditions": ["anxiety", "stress"], "notes": "Patient reports chronic worry related to work, accompanied by physical symptoms like tension and headaches."}
-
-Example 3 (Emergency):
-User: "I feel like I want to die now."
-Assistant: "***\n1. **If you are in an immediately dangerous situation (such as on a rooftop, bridge, or with means of harm):**\n- Move to a safe location immediately\n- Call emergency services: 999\n- Stay on the line with emergency services\n\n2. **For immediate support:**\n- Go to your nearest emergency room/A&E department\n- Call The Samaritans hotline (Multilingual): (852) 2896 0000\n- Call Suicide Prevention Service hotline (Cantonese): (852) 2382 0000\n\n**Are you currently in a safe location?** If not, please seek immediate help using the emergency contacts above.\n*** Do you want to keep going with the screening?"
-
-Remember:
-- Always maintain a professional and empathetic tone
-- Focus on gathering information about symptoms and experiences
-- End with a JSON output when you have enough information
-- For emergencies, provide immediate help information first"""
-            }
-        ]
-        
-        # Add the conversation history
-        enhanced_messages.extend(messages)
-        
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=enhanced_messages,
+            messages=message,
             temperature=temperature,
             max_tokens=max_tokens
         )
@@ -127,55 +80,9 @@ def generate_report_with_gpt(messages):
     
     while retry_count <= max_retries:
         try:
-            # Enhanced system prompt for report generation
-            enhanced_messages = [
-                {
-                    "role": "system",
-                    "content": """You are a mental health report specialist. Generate a comprehensive mental health diagnosis report based on the screening conversation and assessment results.
-
-Report Structure:
-1. Patient Information (extract from conversation)
-2. Presenting Symptoms (summarize symptoms mentioned in conversation)
-3. Assessment Results (detailed results of each assessment with scores and interpretations)
-4. Diagnosis (provide a tentative diagnosis based on assessments and symptoms)
-5. Recommendations (suggest appropriate treatments or further evaluations)
-6. Disclaimer (include a clear and prominent disclaimer section)
-
-Example Report:
-# Mental Health Assessment Report
-## Date: [Current Date]
-
-### Patient Information
-[Extracted from conversation]
-
-### Presenting Symptoms
-- [List of symptoms]
-- [Duration and severity]
-- [Impact on daily life]
-
-### Assessment Results
-[Detailed results of each assessment]
-
-### Diagnosis
-[Tentative diagnosis based on symptoms and assessments]
-
-### Recommendations
-[Specific recommendations for next steps]
-
-### Disclaimer
-IMPORTANT DISCLAIMER: This report is generated by an AI assistant and is not a clinical diagnosis. 
-The assessment tools used are screening instruments only and do not replace a proper evaluation by a qualified healthcare professional.
-This report is not a substitute for professional medical advice, diagnosis, or treatment.
-If you're experiencing severe symptoms or having thoughts of harming yourself or others, please seek immediate medical attention or contact a crisis helpline."""
-                }
-            ]
-            
-            # Add the conversation history
-            enhanced_messages.extend(messages)
-            
             completion = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=enhanced_messages,
+                messages=messages,
                 temperature=0.5,
                 max_tokens=2000
             )
@@ -394,7 +301,6 @@ def calculate_assessment_results(assessment_data, responses):
 # Function for the screening agent
 def screening_agent(user_input):
     screening_prompt = [
-<<<<<<< HEAD
         {
                 "role": "system",
                 "content": """You are a mental health screening specialist. Your task is to have a conversation with the patient to identify potential mental health issues. 
@@ -405,26 +311,6 @@ Guidelines:
 3. Be empathetic and supportive
 4. For emergency situations, provide immediate help information
 5. End with a JSON output when screening is complete
-=======
-        {"role": "system", "content": """ You are a mental health screening specialist. 
-        Your task is to talk with the patient to find out potential mental health issues.
-        Ask about their feelings, why they have the feelings, and physical symptoms.
-        Based on their responses, identify potential mental health conditions they might have (normal, depression, anxiety, ptsd, hopelessness, stress, etc)
-        or determine if they appear mentally healthy. Ask follow-up questions to gather more information that helps you determine if they have a mental health condition.
-        Do not ask more than one question at a time, The questions must be detailed and clear. For example, do not only ask patients how they cope with the feelings, but also provide some suggestions to help them cope with the feelings and ask if they have tried before. 
-        Once you have enough information, end the conversation with a JSON output in this format:
-        {"screening_complete": true, "possible_conditions": ["condition1", "condition2"], "notes": "brief notes on observations"}
-        If the patient appears mentally healthy with no significant issues, include "normal" in the possible_conditions list.
-        The possible_conditions list should put the most likely conditions first.
-        IMPORTANT: When sending the JSON, DO NOT include any other text before or after the JSON - only send the JSON object itself.
-
-        If you detect an immediate URGENT SAFETY CONCERN, such as (I want to die now), please send the following message:
-        ***
-        1. **If you are in an immediately dangerous situation (such as on a rooftop, bridge, or with means of harm):**
-        - Move to a safe location immediately
-        - Call emergency services: 999
-        - Stay on the line with emergency services
->>>>>>> d11f057436c0b6132d8a08e6eead7a72bd113dde
 
 Example conversations:
 
