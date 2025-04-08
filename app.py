@@ -7,7 +7,7 @@ from openai import OpenAI
 
 # Get the API key
 API = st.secrets["API_KEY"]
-
+API = str(API)
 # Initialize OpenAI client
 client = OpenAI(
     api_key=API,
