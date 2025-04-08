@@ -189,7 +189,38 @@ ASSESSMENTS = {
     "DASS-21": {
         "name": "Depression Anxiety Stress Scales",
         "description": "Measures depression, anxiety, and stress levels",
+    "DASS-21": {
+        "name": "Depression Anxiety Stress Scales",
+        "description": "Measures depression, anxiety, and stress levels",
         "questions": [
+            "I found it hard to wind down",
+            "I was aware of dryness of my mouth",
+            "I couldn't seem to experience any positive feeling at all",
+            "I experienced breathing difficulty (e.g., excessively rapid breathing, breathlessness in the absence of physical exertion)",
+            "I found it difficult to work up the initiative to do things",
+            "I tended to over-react to situations",
+            "I experienced trembling (e.g., in the hands)",
+            "I felt that I was using a lot of nervous energy",
+            "I was worried about situations in which I might panic and make a fool of myself",
+            "I felt that I had nothing to look forward to",
+            "I found myself getting agitated",
+            "I found it difficult to relax",
+            "I felt down-hearted and blue",
+            "I was intolerant of anything that kept me from getting on with what I was doing",
+            "I felt I was close to panic",
+            "I was unable to become enthusiastic about anything",
+            "I felt I wasn't worth much as a person",
+            "I felt that I was rather touchy",
+            "I was aware of the action of my heart in the absence of physical exertion (e.g. sense of heart rate increase, heart missing a beat)",
+            "I felt scared without any good reason",
+            "I felt that life was meaningless"
+        ],
+        "options": [
+            "Did not apply to me at all",
+            "Applied to me to some degree, or some of the time",
+            "Applied to me to a considerable degree, or a good part of time",
+            "Applied to me very much, or most of the time"
+        ],
             "I found it hard to wind down",
             "I was aware of dryness of my mouth",
             "I couldn't seem to experience any positive feeling at all",
@@ -220,6 +251,27 @@ ASSESSMENTS = {
         ],
         "scores": [0, 1, 2, 3],
         "interpretation": {
+            "stress": {
+                "0-14": "Normal",
+                "15-18": "Mild",
+                "19-25": "Moderate",
+                "26-33": "Severe",
+                "34+": "Extremely Severe"
+            },
+            "anxiety": {
+                "0-7": "Normal",
+                "8-9": "Mild",
+                "10-14": "Moderate",
+                "15-19": "Severe",
+                "20+": "Extremely Severe"
+            },
+            "depression": {
+                "0-9": "Normal",
+                "10-13": "Mild",
+                "14-20": "Moderate",
+                "21-27": "Severe",
+                "28+": "Extremely Severe"
+            }
             "stress": {
                 "0-14": "Normal",
                 "15-18": "Mild",
@@ -293,7 +345,36 @@ def calculate_dass_scores(responses):
         "anxiety": anxiety_score,
         "depression": depression_score
     }
+    }
+}
 
+# Function to calculate DASS-21 scores
+def calculate_dass_scores(responses):
+    # DASS-21 scoring
+    stress_items = [0, 5, 7, 10, 11, 13, 17]  # Q1, Q6, Q8, Q11, Q12, Q14, Q18
+    anxiety_items = [1, 3, 6, 8, 14, 18, 19]  # Q2, Q4, Q7, Q9, Q15, Q19, Q20
+    depression_items = [2, 4, 9, 12, 15, 16, 20]  # Q3, Q5, Q10, Q13, Q16, Q17, Q21
+    
+    stress_score = sum(responses[i] for i in stress_items) * 2
+    anxiety_score = sum(responses[i] for i in anxiety_items) * 2
+    depression_score = sum(responses[i] for i in depression_items) * 2
+    
+    return {
+        "stress": stress_score,
+        "anxiety": anxiety_score,
+        "depression": depression_score
+    }
+
+# Function to get DASS-21 interpretation
+def get_dass_interpretation(scores):
+    interpretations = {}
+    for category, score in scores.items():
+        for range_str, level in ASSESSMENTS["DASS-21"]["interpretation"][category].items():
+            min_score, max_score = map(int, range_str.split("-"))
+            if min_score <= score <= max_score:
+                interpretations[category] = level
+                break
+    return interpretations
 # Function to get DASS-21 interpretation
 def get_dass_interpretation(scores):
     interpretations = {}
@@ -308,6 +389,32 @@ def get_dass_interpretation(scores):
 # Function to get healthcare recommendations based on assessment results
 def get_healthcare_recommendation(assessment_name, score, interpretation):
     recommendations = {
+        "DASS-21": {
+            "depression": {
+                "Normal": "Your depression symptoms appear to be within normal range. Continue practicing self-care and maintaining healthy habits. If you notice any changes in your mood or symptoms, consider speaking with a healthcare provider.",
+                "Mild": "You're experiencing mild depression symptoms. Consider implementing self-care strategies and monitoring your symptoms. If they persist or worsen, it may be helpful to speak with a healthcare provider.",
+                "Moderate": "Your responses suggest moderate depression symptoms. It's recommended that you speak with a healthcare provider to discuss your symptoms and explore appropriate support options.",
+                "Severe": "Your responses indicate severe depression symptoms. It's strongly recommended that you speak with a healthcare provider as soon as possible to discuss your symptoms and treatment options.",
+                "Extremely Severe": "Your responses suggest extremely severe depression symptoms. Please seek immediate support from a healthcare provider or mental health professional. If you're having thoughts of self-harm, please contact emergency services or a crisis helpline immediately."
+            },
+            "anxiety": {
+                "Normal": "Your anxiety symptoms appear to be within normal range. Continue practicing stress management techniques and maintaining healthy habits. If you notice any changes in your symptoms, consider speaking with a healthcare provider.",
+                "Mild": "You're experiencing mild anxiety symptoms. Consider implementing stress management techniques and monitoring your symptoms. If they persist or worsen, it may be helpful to speak with a healthcare provider.",
+                "Moderate": "Your responses suggest moderate anxiety symptoms. It's recommended that you speak with a healthcare provider to discuss your symptoms and explore appropriate support options.",
+                "Severe": "Your responses indicate severe anxiety symptoms. It's strongly recommended that you speak with a healthcare provider as soon as possible to discuss your symptoms and treatment options.",
+                "Extremely Severe": "Your responses suggest extremely severe anxiety symptoms. Please seek immediate support from a healthcare provider or mental health professional. If you're experiencing a panic attack or severe distress, please contact emergency services or a crisis helpline immediately."
+            },
+            "stress": {
+                "Normal": "Your stress levels appear to be within normal range. Continue practicing stress management techniques and maintaining healthy habits. If you notice any changes in your stress levels, consider speaking with a healthcare provider.",
+                "Mild": "You're experiencing mild stress. Consider implementing stress management techniques and monitoring your stress levels. If they persist or worsen, it may be helpful to speak with a healthcare provider.",
+                "Moderate": "Your responses suggest moderate stress levels. It's recommended that you speak with a healthcare provider to discuss your stress management strategies and explore appropriate support options.",
+                "Severe": "Your responses indicate severe stress levels. It's strongly recommended that you speak with a healthcare provider as soon as possible to discuss your symptoms and treatment options.",
+                "Extremely Severe": "Your responses suggest extremely severe stress levels. Please seek immediate support from a healthcare provider or mental health professional. If you're experiencing severe distress, please contact emergency services or a crisis helpline immediately."
+            }
+        },
+        "PCL-5": {
+            "Below threshold for PTSD": "Your responses suggest that you are below the threshold for PTSD. However, if you're experiencing distress related to a traumatic event, speaking with a mental health professional can still be beneficial.",
+            "Probable PTSD - clinical assessment recommended": "Your responses suggest you may be experiencing significant PTSD symptoms. It's strongly recommended that you speak with a mental health professional specializing in trauma for proper evaluation and support."
         "DASS-21": {
             "depression": {
                 "Normal": "Your depression symptoms appear to be within normal range. Continue practicing self-care and maintaining healthy habits. If you notice any changes in your mood or symptoms, consider speaking with a healthcare provider.",
@@ -350,11 +457,28 @@ def get_healthcare_recommendation(assessment_name, score, interpretation):
     else:
         # For PCL-5, we can use the interpretation directly
         return recommendations[assessment_name][interpretation]
+    if assessment_name == "DASS-21":
+        # For DASS-21, we need to determine which category (depression, anxiety, or stress) to use
+        # The interpretation parameter contains the severity level (e.g., "Mild", "Moderate", etc.)
+        # We'll use the first word of the interpretation to determine the category
+        category = interpretation.split()[0].lower()
+        if category in ["normal", "mild", "moderate", "severe", "extremely"]:
+            severity = interpretation
+            return recommendations[assessment_name]["depression"][severity]
+        else:
+            return recommendations[assessment_name]["depression"]["Normal"]
+    else:
+        # For PCL-5, we can use the interpretation directly
+        return recommendations[assessment_name][interpretation]
 
 # Function to determine assessment priorities
 def get_assessment_priorities(conditions, current_assessment=None):
     priorities = []
     condition_map = {
+        "depression": "DASS-21",
+        "anxiety": "DASS-21",
+        "stress": "DASS-21",
+        "ptsd": "PCL-5"
         "depression": "DASS-21",
         "anxiety": "DASS-21",
         "stress": "DASS-21",
@@ -385,10 +509,62 @@ def calculate_assessment_results(assessment_data, responses):
                 interpretation = interp
                 break
         return total_score, interpretation
+    if assessment_data["name"] == "Depression Anxiety Stress Scales":
+        scores = calculate_dass_scores(responses)
+        interpretations = get_dass_interpretation(scores)
+        return scores, interpretations
+    else:
+        total_score = sum(responses)
+        interpretation = ""
+        for score_range, interp in assessment_data["interpretation"].items():
+            min_score, max_score = map(int, score_range.split("-"))
+            if min_score <= total_score <= max_score:
+                interpretation = interp
+                break
+        return total_score, interpretation
 
 # Function for the screening agent
 def screening_agent(user_input):
     screening_prompt = [
+        {
+                "role": "system",
+                "content": """You are a mental health screening specialist. Your task is to have a conversation with the patient to identify potential mental health issues. 
+
+Guidelines:
+1. Focus on their feelings, experiences, and physical symptoms
+2. Ask one question at a time
+3. Be empathetic and supportive
+4. For emergency situations, provide immediate help information
+5. End with a JSON output when screening is complete
+
+Example conversations:
+
+Example 1:
+User: "I've been feeling really down lately."
+Assistant: "I'm sorry you're feeling this way. Can you tell me more about what has been making you feel down? For example, changes in your daily routine, relationships, or work."
+User: "I just lost my job a few months ago."
+Assistant: "I'm sorry to hear about your job loss. How has this situation been affecting your daily life and overall mood? Have you noticed any changes in your sleep or appetite?"
+User: "I've been having trouble sleeping and I don't feel hungry."
+Assistant: {"screening_complete": true, "possible_conditions": ["depression", "anxiety"], "notes": "Patient is experiencing persistent sadness, sleep disturbances, and appetite loss following job loss."}
+
+Example 2:
+User: "I can't stop worrying about everything."
+Assistant: "I'm sorry you're feeling this way. Can you tell me more about what kinds of things you find yourself worrying about? For example, health, work, relationships, or other areas."
+User: "Mostly work and whether I'm doing a good job."
+Assistant: "It's understandable to be concerned about your work performance. How long have you been feeling this constant worry, and how is it affecting your daily activities or physical well-being?"
+User: "It's been about six months, and I often feel tense and have headaches."
+Assistant: {"screening_complete": true, "possible_conditions": ["anxiety", "stress"], "notes": "Patient reports chronic worry related to work, accompanied by physical symptoms like tension and headaches."}
+
+Example 3 (Emergency):
+User: "I feel like I want to die now."
+Assistant: "***\n1. **If you are in an immediately dangerous situation (such as on a rooftop, bridge, or with means of harm):**\n- Move to a safe location immediately\n- Call emergency services: 999\n- Stay on the line with emergency services\n\n2. **For immediate support:**\n- Go to your nearest emergency room/A&E department\n- Call The Samaritans hotline (Multilingual): (852) 2896 0000\n- Call Suicide Prevention Service hotline (Cantonese): (852) 2382 0000\n\n**Are you currently in a safe location?** If not, please seek immediate help using the emergency contacts above.\n*** Do you want to keep going with the screening?"
+
+Remember:
+- Always maintain a professional and empathetic tone
+- Focus on gathering information about symptoms and experiences
+- End with a JSON output when you have enough information
+- For emergencies, provide immediate help information first"""
+            }
         {
                 "role": "system",
                 "content": """You are a mental health screening specialist. Your task is to have a conversation with the patient to identify potential mental health issues. 
@@ -510,6 +686,7 @@ def assessment_agent():
                 score = assessment_data["scores"][i]
                 if "reverse_scored" in assessment_data and st.session_state.assessment_index in assessment_data.get("reverse_scored", []):
                     score = assessment_data["scores"][-i-1]
+                    score = assessment_data["scores"][-i-1]
                 
                 st.session_state.assessment_responses[current].append(score)
                 st.session_state.messages.append({"role": "user", "content": f"My answer: {assessment_data['options'][i]}"})
@@ -543,13 +720,42 @@ This questionnaire is a screening tool and not a clinical diagnosis. The chatbot
                         
                         result_message = f"""Thank you for completing the questionnaire. Here are your results:
 
+                    if current == "DASS-21":
+                        scores, interpretations = calculate_assessment_results(assessment_data, st.session_state.assessment_responses[current])
+                        st.session_state.diagnosis["assessment_results"][current] = {
+                            "scores": scores,
+                            "interpretations": interpretations
+                        }
+                        
+                        result_message = f"""Thank you for completing the questionnaire. Here are your results:
+
+Depression Level: {interpretations['depression']}
+Anxiety Level: {interpretations['anxiety']}
+Stress Level: {interpretations['stress']}
+
+**Healthcare Recommendations:**
+{get_healthcare_recommendation(current, scores['depression'], interpretations['depression'])}
+
+**Important Disclaimer:**
+This questionnaire is a screening tool and not a clinical diagnosis. The chatbot cannot provide a real medical diagnosis and is not a substitute for professional healthcare. Please consult with a qualified healthcare provider for proper evaluation and treatment."""
+                    else:
+                        total_score, interpretation = calculate_assessment_results(assessment_data, st.session_state.assessment_responses[current])
+                        st.session_state.diagnosis["assessment_results"][current] = {
+                            "score": total_score,
+                            "interpretation": interpretation
+                        }
+                        
+                        result_message = f"""Thank you for completing the questionnaire. Here are your results:
+
 Score: {total_score}
 Interpretation: {interpretation}
 
 **Healthcare Recommendation:**
 {get_healthcare_recommendation(current, total_score, interpretation)}
+{get_healthcare_recommendation(current, total_score, interpretation)}
 
 **Important Disclaimer:**
+This questionnaire is a screening tool and not a clinical diagnosis. The chatbot cannot provide a real medical diagnosis and is not a substitute for professional healthcare. Please consult with a qualified healthcare provider for proper evaluation and treatment."""
 This questionnaire is a screening tool and not a clinical diagnosis. The chatbot cannot provide a real medical diagnosis and is not a substitute for professional healthcare. Please consult with a qualified healthcare provider for proper evaluation and treatment."""
                     
                     st.session_state.messages.append({"role": "assistant", "content": result_message})
@@ -562,14 +768,17 @@ This questionnaire is a screening tool and not a clinical diagnosis. The chatbot
                         st.session_state.current_assessment = next_assessment
                         st.session_state.assessment_index = 0
                         next_assessment_intro = "I have another questionnaire for you to complete. Please answer the following questions honestly."
+                        next_assessment_intro = "I have another questionnaire for you to complete. Please answer the following questions honestly."
                         st.session_state.messages.append({"role": "assistant", "content": next_assessment_intro})
                         st.rerun()
                     else:
                         # No more assessments needed, show generate report button
                         st.session_state.chat_state = "awaiting_report"
                         completion_message = """Thank you for completing all the questionnaires. 
+                        completion_message = """Thank you for completing all the questionnaires. 
 
 You can now generate your comprehensive report by clicking the "Generate Report" button below. The report will include:
+1. A summary of your results
 1. A summary of your results
 2. Interpretation of your scores
 3. Recommendations for next steps
@@ -676,6 +885,45 @@ The assessment tools used are screening instruments only and do not replace a pr
 This report is not a substitute for professional medical advice, diagnosis, or treatment.
 If you're experiencing severe symptoms or having thoughts of harming yourself or others, please seek immediate medical attention or contact a crisis helpline."""
                 }
+            {
+                    "role": "system",
+                    "content": """You are a mental health report specialist. Generate a comprehensive mental health diagnosis report based on the screening conversation and assessment results.
+
+Report Structure:
+1. Patient Information (extract from conversation)
+2. Presenting Symptoms (summarize symptoms mentioned in conversation)
+3. Assessment Results (detailed results of each assessment with scores and interpretations)
+4. Diagnosis (provide a tentative diagnosis based on assessments and symptoms)
+5. Recommendations (suggest appropriate treatments or further evaluations)
+6. Disclaimer (include a clear and prominent disclaimer section)
+
+Example Report:
+# Mental Health Assessment Report
+## Date: [Current Date]
+
+### Patient Information
+[Extracted from conversation]
+
+### Presenting Symptoms
+- [List of symptoms]
+- [Duration and severity]
+- [Impact on daily life]
+
+### Assessment Results
+[Detailed results of each assessment]
+
+### Diagnosis
+[Tentative diagnosis based on symptoms and assessments]
+
+### Recommendations
+[Specific recommendations for next steps]
+
+### Disclaimer
+IMPORTANT DISCLAIMER: This report is generated by an AI assistant and is not a clinical diagnosis. 
+The assessment tools used are screening instruments only and do not replace a proper evaluation by a qualified healthcare professional.
+This report is not a substitute for professional medical advice, diagnosis, or treatment.
+If you're experiencing severe symptoms or having thoughts of harming yourself or others, please seek immediate medical attention or contact a crisis helpline."""
+                }
         ]
         
         # Add chat history
@@ -716,6 +964,10 @@ What would you like to know more about?"""
         st.rerun()
         return report
     except Exception as e:
+        error_message = str(e)
+        if "401" in error_message or "无效的令牌" in error_message:
+            st.error("Authentication Error: Please check your API key. It appears to be invalid.")
+            raise e
         error_message = str(e)
         if "401" in error_message or "无效的令牌" in error_message:
             st.error("Authentication Error: Please check your API key. It appears to be invalid.")
@@ -838,4 +1090,4 @@ if st.checkbox("Show Debug Info"):
     st.write(f"Current Assessment: {st.session_state.current_assessment}")
     st.write(f"Assessment Index: {st.session_state.assessment_index}")
     st.write(f"Diagnosis Data: {st.session_state.diagnosis}")
-    st.write(f"Assessment Responses: {st.session_state.assessment_responses}") 
+    st.write(f"Assessment Responses: {st.session_state.assessment_responses}")
