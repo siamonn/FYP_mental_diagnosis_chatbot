@@ -68,10 +68,6 @@ def chat_with_gpt(messages, temperature=0.7, max_tokens=1000, timeout=None):
             max_tokens=max_tokens
         )
         return completion.choices[0].message.content
-    except Exception as e:
-        st.error(f"API Error: {str(e)}")
-        return f"Sorry, I encountered an error while processing your request. Please try again. Error: {str(e)}"
-
 # Function to communicate with the GPT API for report generation
 def generate_report_with_gpt(messages):
     max_retries = 2
