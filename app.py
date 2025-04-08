@@ -12,7 +12,7 @@ API = str(API)
 client = OpenAI(
 
     base_url ="https://xiaoai.plus/v1",
-    api_key= "sk-UnNXXoNG6qqa1RUl24zKrakQaHBeyxqkxEtaVwGbSrGlRQxl"
+    api_key= API
     
 )
 
