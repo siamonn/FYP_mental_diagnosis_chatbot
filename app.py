@@ -14,7 +14,7 @@ os.environ.clear()
 dotenv.load_dotenv(override=True)
 
 # Get the API key
-API_KEY = st.secrets['API_KEY'] | os.getenv("API_KEY")
+API_KEY = st.secrets['API_KEY']
 
 # Verify API key is loaded correctly
 if not API_KEY:
