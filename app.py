@@ -10,8 +10,10 @@ API = st.secrets["API_KEY"]
 API = str(API)
 # Initialize OpenAI client
 client = OpenAI(
-    api_key=API,
+
     base_url='https://xiaoai.plus/v1'
+    api_key=API,
+    
 )
 
 # Function to initialize session state variables
