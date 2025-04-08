@@ -19,9 +19,6 @@ API_KEY = os.getenv("API_KEY")
 # Verify API key is loaded correctly
 if not API_KEY:
     st.error("API_KEY not found in environment variables")
-elif API_KEY != "sk-UnNXXoNG6qqa1RUl24zKrakQaHBeyxqkxEtaVwGbSrGlRQxl":
-    st.error(f"API key mismatch. Expected: sk-UnNXXoNG6qqa1RUl24zKrakQaHBeyxqkxEtaVwGbSrGlRQxl, Got: {API_KEY}")
-
 # Initialize OpenAI client
 client = OpenAI(
     api_key=API_KEY,
